@@ -113,13 +113,54 @@ export const MapView = ({
     }
   }, [showCityMarker, centerLat, centerLng, isMapReady, onCityMove]);
 
-  // Waypoint markers
+  // Waypoint markers and route line
   useEffect(() => {
     if (!map.current || !isMapReady) return;
 
     // Remove existing markers
     markers.current.forEach((marker) => marker.remove());
     markers.current = [];
+
+    // Update or add route line
+    const coordinates = waypoints.map(wp => [wp.longitude, wp.latitude]);
+    
+    if (map.current.getSource('route')) {
+      (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: coordinates
+        }
+      });
+    } else if (coordinates.length > 0) {
+      map.current.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: coordinates
+          }
+        }
+      });
+
+      map.current.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 3,
+          'line-opacity': 0.8
+        }
+      });
+    }
 
     // Add new markers
     waypoints.forEach((waypoint, index) => {

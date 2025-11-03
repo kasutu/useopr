@@ -30,8 +30,8 @@ export const WaypointManager = ({
       sub_locality_type: "barangay",
       street: "Main St",
       destination: "Terminal",
-      latitude: centerLat + (Math.random() - 0.5) * 0.01,
-      longitude: centerLng + (Math.random() - 0.5) * 0.01,
+      latitude: centerLat,
+      longitude: centerLng,
     };
     onWaypointsChange([...waypoints, newWaypoint]);
     onSelectWaypoint(waypoints.length);

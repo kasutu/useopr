@@ -25,6 +25,7 @@ const Index = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [isSettingCity, setIsSettingCity] = useState(false);
+  const [currentMapCenter, setCurrentMapCenter] = useState({ lat: data.latitude, lng: data.longitude });
 
   useEffect(() => {
     localStorage.setItem("mapbox-api-key", apiKey);
@@ -132,8 +133,8 @@ const Index = () => {
                     selectedWaypointIndex={selectedWaypointIndex}
                     onWaypointsChange={handleWaypointsChange}
                     onSelectWaypoint={setSelectedWaypointIndex}
-                    centerLat={data.latitude}
-                    centerLng={data.longitude}
+                    centerLat={currentMapCenter.lat}
+                    centerLng={currentMapCenter.lng}
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -158,6 +159,7 @@ const Index = () => {
           onWaypointSelect={setSelectedWaypointIndex}
           onCityMove={handleCityMove}
           showCityMarker={isSettingCity}
+          onMapCenterChange={(lat, lng) => setCurrentMapCenter({ lat, lng })}
         />
       </div>
     </div>

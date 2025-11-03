@@ -13,6 +13,7 @@ interface MapViewProps {
   onWaypointSelect: (index: number | null) => void;
   onCityMove?: (lat: number, lng: number) => void;
   showCityMarker?: boolean;
+  onMapCenterChange?: (lat: number, lng: number) => void;
 }
 
 export const MapView = ({
@@ -25,6 +26,7 @@ export const MapView = ({
   onWaypointSelect,
   onCityMove,
   showCityMarker = false,
+  onMapCenterChange,
 }: MapViewProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -49,6 +51,13 @@ export const MapView = ({
 
     map.current.on("load", () => {
       setIsMapReady(true);
+    });
+
+    map.current.on("move", () => {
+      if (map.current && onMapCenterChange) {
+        const center = map.current.getCenter();
+        onMapCenterChange(center.lat, center.lng);
+      }
     });
 
     return () => {

@@ -12,14 +12,35 @@ import { Separator } from "@/components/ui/separator";
 
 const Index = () => {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem("mapbox-api-key") || "");
-  const [data, setData] = useState<OPRData>(DEFAULT_OPR_DATA);
-  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(null);
-  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState<number | null>(null);
+  const [data, setData] = useState<OPRData>(() => {
+    const saved = localStorage.getItem("opr-data");
+    return saved ? JSON.parse(saved) : DEFAULT_OPR_DATA;
+  });
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(() => {
+    const saved = localStorage.getItem("opr-selected-route");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState<number | null>(() => {
+    const saved = localStorage.getItem("opr-selected-waypoint");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [isSettingCity, setIsSettingCity] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("mapbox-api-key", apiKey);
   }, [apiKey]);
+
+  useEffect(() => {
+    localStorage.setItem("opr-data", JSON.stringify(data));
+  }, [data]);
+
+  useEffect(() => {
+    localStorage.setItem("opr-selected-route", JSON.stringify(selectedRouteIndex));
+  }, [selectedRouteIndex]);
+
+  useEffect(() => {
+    localStorage.setItem("opr-selected-waypoint", JSON.stringify(selectedWaypointIndex));
+  }, [selectedWaypointIndex]);
 
   const handleApiKeyChange = (key: string) => {
     setApiKey(key);

@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { Waypoint } from "@/types/opr";
-import { MapSearch } from "./MapSearch";
-import { GeocodingResult } from "@/utils/geocoding";
+import mapboxgl from 'mapbox-gl';
+import { GeocodingResult } from '@/utils/geocoding';
+import { MapSearch } from './MapSearch';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+  } from 'react';
+import { Waypoint } from '@/types/opr';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
   apiKey: string;
@@ -36,6 +41,18 @@ export const MapView = ({
   const cityMarker = useRef<mapboxgl.Marker | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
+  function addProgress(
+    geometry: GeoJSON.LineString
+  ): GeoJSON.Feature<GeoJSON.LineString> {
+    const coords = geometry.coordinates;
+    const total = coords.length - 1;
+    return {
+      type: 'Feature',
+      properties: {},
+      geometry,
+    };
+  }
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || !apiKey || map.current) return;
@@ -44,18 +61,29 @@ export const MapView = ({
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12",
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [centerLng, centerLat],
       zoom: 13,
+      fadeDuration: 0,
+      maxTileCacheSize: null,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.current.on('error', (e) => {
+      console.error('Map error:', e);
+    });
 
-    map.current.on("load", () => {
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    map.current.on('load', () => {
+      const bbox = map.current!.getBounds();
+      for (let z = Math.max(1, map.current!.getZoom() - 1); z <= 22; z += 1) {
+        map.current!.fitBounds(bbox, { animate: false, duration: 0 });
+      }
+
       setIsMapReady(true);
     });
 
-    map.current.on("move", () => {
+    map.current.on('move', () => {
       if (map.current && onMapCenterChange) {
         const center = map.current.getCenter();
         onMapCenterChange(center.lat, center.lng);
@@ -68,7 +96,7 @@ export const MapView = ({
       map.current?.remove();
       map.current = null;
     };
-  }, [apiKey]);
+  }, []);
 
   // Update map center
   useEffect(() => {
@@ -82,7 +110,12 @@ export const MapView = ({
 
   // Navigate to selected waypoint
   useEffect(() => {
-    if (map.current && isMapReady && selectedWaypointIndex !== null && waypoints[selectedWaypointIndex]) {
+    if (
+      map.current &&
+      isMapReady &&
+      selectedWaypointIndex !== null &&
+      waypoints[selectedWaypointIndex]
+    ) {
       const waypoint = waypoints[selectedWaypointIndex];
       map.current.flyTo({
         center: [waypoint.longitude, waypoint.latitude],
@@ -103,15 +136,15 @@ export const MapView = ({
     if (cityMarker.current) {
       cityMarker.current.setLngLat([centerLng, centerLat]);
     } else {
-      const el = document.createElement("div");
-      el.className = "city-marker";
-      el.style.width = "24px";
-      el.style.height = "24px";
-      el.style.backgroundColor = "#ef4444";
-      el.style.borderRadius = "50%";
-      el.style.border = "3px solid white";
-      el.style.cursor = "move";
-      el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+      const el = document.createElement('div');
+      el.className = 'city-marker';
+      el.style.width = '24px';
+      el.style.height = '24px';
+      el.style.backgroundColor = '#ef4444';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid white';
+      el.style.cursor = 'move';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
 
       cityMarker.current = new mapboxgl.Marker({
         element: el,
@@ -120,7 +153,7 @@ export const MapView = ({
         .setLngLat([centerLng, centerLat])
         .addTo(map.current);
 
-      cityMarker.current.on("dragend", () => {
+      cityMarker.current.on('dragend', () => {
         const lngLat = cityMarker.current!.getLngLat();
         onCityMove?.(lngLat.lat, lngLat.lng);
       });
@@ -145,14 +178,16 @@ export const MapView = ({
             properties: {},
             geometry: {
               type: 'LineString',
-              coordinates: []
-            }
+              coordinates: [],
+            },
           });
         }
         return;
       }
 
-      const coordinates = waypoints.map(wp => `${wp.longitude},${wp.latitude}`).join(';');
+      const coordinates = waypoints
+        .map((wp) => `${wp.longitude},${wp.latitude}`)
+        .join(';');
       const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&overview=full&access_token=${apiKey}`;
 
       try {
@@ -166,7 +201,7 @@ export const MapView = ({
             (map.current.getSource('route') as mapboxgl.GeoJSONSource).setData({
               type: 'Feature',
               properties: {},
-              geometry: routeGeometry
+              geometry: routeGeometry,
             });
           } else {
             map.current?.addSource('route', {
@@ -174,8 +209,8 @@ export const MapView = ({
               data: {
                 type: 'Feature',
                 properties: {},
-                geometry: routeGeometry
-              }
+                geometry: routeGeometry,
+              },
             });
 
             map.current?.addLayer({
@@ -184,13 +219,13 @@ export const MapView = ({
               source: 'route',
               layout: {
                 'line-join': 'round',
-                'line-cap': 'round'
+                'line-cap': 'round',
               },
               paint: {
                 'line-color': '#10b981',
                 'line-width': 4,
-                'line-opacity': 0.8
-              }
+                'line-opacity': 0.8,
+              },
             });
           }
         }
@@ -203,26 +238,26 @@ export const MapView = ({
 
     // Add new markers
     waypoints.forEach((waypoint, index) => {
-      const el = document.createElement("div");
-      el.className = "waypoint-marker";
-      el.style.width = "32px";
-      el.style.height = "32px";
+      const el = document.createElement('div');
+      el.className = 'waypoint-marker';
+      el.style.width = '32px';
+      el.style.height = '32px';
       el.style.backgroundColor =
-        index === selectedWaypointIndex ? "#3b82f6" : "#10b981";
-      el.style.borderRadius = "50%";
-      el.style.border = "3px solid white";
-      el.style.cursor = "move";
-      el.style.display = "flex";
-      el.style.alignItems = "center";
-      el.style.justifyContent = "center";
-      el.style.color = "white";
-      el.style.fontWeight = "bold";
-      el.style.fontSize = "14px";
-      el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
+        index === selectedWaypointIndex ? '#3b82f6' : '#10b981';
+      el.style.borderRadius = '50%';
+      el.style.border = '3px solid white';
+      el.style.cursor = 'move';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.color = 'white';
+      el.style.fontWeight = 'bold';
+      el.style.fontSize = '14px';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       el.textContent = waypoint.sequence.toString();
 
-      el.addEventListener("click", () => {
-        onWaypointSelect(index);
+      el.addEventListener('click', () => {
+        handleWaypointSelect(index);
       });
 
       const marker = new mapboxgl.Marker({
@@ -232,14 +267,20 @@ export const MapView = ({
         .setLngLat([waypoint.longitude, waypoint.latitude])
         .addTo(map.current!);
 
-      marker.on("dragend", () => {
+      marker.on('dragend', () => {
         const lngLat = marker.getLngLat();
-        onWaypointMove(index, lngLat.lat, lngLat.lng);
+        handleWaypointMove(index, lngLat.lat, lngLat.lng);
       });
 
       markers.current.push(marker);
     });
-  }, [waypoints, selectedWaypointIndex, isMapReady, onWaypointMove, onWaypointSelect]);
+  }, [
+    waypoints,
+    selectedWaypointIndex,
+    isMapReady,
+    onWaypointMove,
+    onWaypointSelect,
+  ]);
 
   const handleSearchResultClick = (result: GeocodingResult) => {
     if (map.current) {
@@ -251,10 +292,26 @@ export const MapView = ({
     }
   };
 
+  const handleWaypointMove = useCallback(
+    (index: number, lat: number, lng: number) => {
+      onWaypointMove(index, lat, lng);
+    },
+    [onWaypointMove]
+  );
+
+  const handleWaypointSelect = useCallback(
+    (index: number | null) => {
+      onWaypointSelect(index);
+    },
+    [onWaypointSelect]
+  );
+
   if (!apiKey) {
     return (
       <div className="flex h-full items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Please set your Mapbox API key in settings</p>
+        <p className="text-muted-foreground">
+          Please set your Mapbox API key in settings
+        </p>
       </div>
     );
   }
@@ -262,6 +319,7 @@ export const MapView = ({
   return (
     <div className="relative h-full w-full">
       <div ref={mapContainer} className="h-full w-full" />
+
       <MapSearch
         apiKey={apiKey}
         proximity={{ lat: centerLat, lng: centerLng }}

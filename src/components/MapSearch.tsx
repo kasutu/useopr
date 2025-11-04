@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Search, MapPin } from "lucide-react";
-import { geocodeAddress, GeocodingResult } from "@/utils/geocoding";
-import { Card } from "@/components/ui/card";
+import { Card } from '@/components/ui/card';
+import { geocodeAddress, GeocodingResult } from '@/utils/geocoding';
+import { Input } from '@/components/ui/input';
+import { MapPin, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface MapSearchProps {
   apiKey: string;
@@ -10,8 +10,12 @@ interface MapSearchProps {
   onResultClick: (result: GeocodingResult) => void;
 }
 
-export const MapSearch = ({ apiKey, proximity, onResultClick }: MapSearchProps) => {
-  const [query, setQuery] = useState("");
+export const MapSearch = ({
+  apiKey,
+  proximity,
+  onResultClick,
+}: MapSearchProps) => {
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodingResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -32,7 +36,7 @@ export const MapSearch = ({ apiKey, proximity, onResultClick }: MapSearchProps) 
 
   const handleResultClick = (result: GeocodingResult) => {
     onResultClick(result);
-    setQuery("");
+    setQuery('');
     setResults([]);
   };
 
@@ -56,7 +60,7 @@ export const MapSearch = ({ apiKey, proximity, onResultClick }: MapSearchProps) 
               <button
                 key={index}
                 onClick={() => handleResultClick(result)}
-                className="w-full text-left px-3 py-2 hover:bg-accent rounded-md transition-colors flex items-start gap-2"
+                className="w-full text-left px-3 py-2 hover:bg-secondary rounded-md transition-colors flex items-start gap-2"
               >
                 <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">

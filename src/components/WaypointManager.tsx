@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, MapPin } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useEffect, useRef } from "react";
 
 interface WaypointManagerProps {
   waypoints: Waypoint[];
@@ -23,6 +24,18 @@ export const WaypointManager = ({
   centerLat,
   centerLng,
 }: WaypointManagerProps) => {
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Scroll selected waypoint card into view
+  useEffect(() => {
+    if (selectedWaypointIndex !== null && cardRefs.current[selectedWaypointIndex]) {
+      cardRefs.current[selectedWaypointIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [selectedWaypointIndex]);
+
   const addWaypoint = () => {
     const newWaypoint: Waypoint = {
       sequence: waypoints.length + 1,
@@ -67,6 +80,7 @@ export const WaypointManager = ({
         {waypoints.map((waypoint, index) => (
           <Card
             key={index}
+            ref={(el) => (cardRefs.current[index] = el)}
             className={`p-3 cursor-pointer transition-colors ${
               selectedWaypointIndex === index ? "border-primary bg-primary/5" : ""
             }`}

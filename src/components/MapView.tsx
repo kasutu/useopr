@@ -78,6 +78,18 @@ export const MapView = ({
     }
   }, [centerLat, centerLng, isMapReady]);
 
+  // Navigate to selected waypoint
+  useEffect(() => {
+    if (map.current && isMapReady && selectedWaypointIndex !== null && waypoints[selectedWaypointIndex]) {
+      const waypoint = waypoints[selectedWaypointIndex];
+      map.current.flyTo({
+        center: [waypoint.longitude, waypoint.latitude],
+        zoom: 16,
+        duration: 1000,
+      });
+    }
+  }, [selectedWaypointIndex, isMapReady]);
+
   // City marker
   useEffect(() => {
     if (!map.current || !isMapReady || !showCityMarker) {

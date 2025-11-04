@@ -88,7 +88,7 @@ const Index = () => {
               <h1 className="text-2xl font-bold">OPR Route Builder</h1>
               <SettingsDialog apiKey={apiKey} onApiKeyChange={handleApiKeyChange} />
             </div>
-            <JsonManager data={data} onImport={handleDataChange} />
+            <JsonManager data={data} onImport={handleDataChange} apiKey={apiKey} />
           </div>
 
           <Separator />

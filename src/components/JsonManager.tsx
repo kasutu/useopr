@@ -11,28 +11,63 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, Download, Upload, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { geocodeAddress } from "@/utils/geocoding";
 
 interface JsonManagerProps {
   data: OPRData;
   onImport: (data: OPRData) => void;
+  apiKey: string;
 }
 
-export const JsonManager = ({ data, onImport }: JsonManagerProps) => {
+export const JsonManager = ({ data, onImport, apiKey }: JsonManagerProps) => {
   const [importJson, setImportJson] = useState("");
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const jsonString = JSON.stringify(data, null, 2);
 
-  const handleImport = () => {
+  const handleImport = async () => {
     try {
-      const parsed = JSON.parse(importJson);
+      const parsed: OPRData = JSON.parse(importJson);
+      setIsGeocoding(true);
+
+      // Geocode waypoints with zero coordinates
+      let geocodedCount = 0;
+      for (const route of parsed.routes) {
+        for (const waypoint of route.waypoints) {
+          if ((waypoint.latitude === 0 || waypoint.longitude === 0) && apiKey) {
+            // Build search query from street and destination
+            const searchQuery = `${waypoint.street} ${waypoint.destination}`.trim();
+            if (searchQuery) {
+              const results = await geocodeAddress(apiKey, searchQuery, {
+                lat: parsed.latitude,
+                lng: parsed.longitude,
+              });
+              
+              if (results.length > 0) {
+                waypoint.longitude = results[0].center[0];
+                waypoint.latitude = results[0].center[1];
+                geocodedCount++;
+              }
+            }
+          }
+        }
+      }
+
+      setIsGeocoding(false);
       onImport(parsed);
       setImportOpen(false);
       setImportJson("");
-      toast.success("JSON imported successfully");
+      
+      if (geocodedCount > 0) {
+        toast.success(`JSON imported with ${geocodedCount} waypoint(s) geocoded`);
+      } else {
+        toast.success("JSON imported successfully");
+      }
     } catch (error) {
+      setIsGeocoding(false);
       toast.error("Invalid JSON format");
     }
   };
@@ -81,8 +116,8 @@ export const JsonManager = ({ data, onImport }: JsonManagerProps) => {
               onChange={(e) => setImportJson(e.target.value)}
               className="min-h-[300px] font-mono text-xs"
             />
-            <Button onClick={handleImport} className="w-full">
-              Import
+            <Button onClick={handleImport} className="w-full" disabled={isGeocoding}>
+              {isGeocoding ? "Geocoding waypoints..." : "Import"}
             </Button>
           </div>
         </DialogContent>

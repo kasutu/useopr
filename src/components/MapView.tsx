@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Waypoint } from "@/types/opr";
+import { MapSearch } from "./MapSearch";
+import { GeocodingResult } from "@/utils/geocoding";
 
 interface MapViewProps {
   apiKey: string;
@@ -239,6 +241,16 @@ export const MapView = ({
     });
   }, [waypoints, selectedWaypointIndex, isMapReady, onWaypointMove, onWaypointSelect]);
 
+  const handleSearchResultClick = (result: GeocodingResult) => {
+    if (map.current) {
+      map.current.flyTo({
+        center: result.center,
+        zoom: 16,
+        duration: 1500,
+      });
+    }
+  };
+
   if (!apiKey) {
     return (
       <div className="flex h-full items-center justify-center bg-muted">
@@ -247,5 +259,14 @@ export const MapView = ({
     );
   }
 
-  return <div ref={mapContainer} className="h-full w-full" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={mapContainer} className="h-full w-full" />
+      <MapSearch
+        apiKey={apiKey}
+        proximity={{ lat: centerLat, lng: centerLng }}
+        onResultClick={handleSearchResultClick}
+      />
+    </div>
+  );
 };

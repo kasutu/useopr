@@ -1,46 +1,62 @@
-import { useState, useEffect } from "react";
-import { OPRData, DEFAULT_OPR_DATA } from "@/types/opr";
-import { MapView } from "@/components/MapView";
-import { CityForm } from "@/components/CityForm";
-import { RouteManager } from "@/components/RouteManager";
-import { WaypointManager } from "@/components/WaypointManager";
-import { SettingsDialog } from "@/components/SettingsDialog";
-import { JsonManager } from "@/components/JsonManager";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card } from '@/components/ui/card';
+import { CityForm } from '@/components/CityForm';
+import { DEFAULT_OPR_DATA, OPRData } from '@/types/opr';
+import { JsonManager } from '@/components/JsonManager';
+import { MapView } from '@/components/MapView';
+import { RouteManager } from '@/components/RouteManager';
+import { Separator } from '@/components/ui/separator';
+import { SettingsDialog } from '@/components/SettingsDialog';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+  } from '@/components/ui/tabs';
+import { useEffect, useState } from 'react';
+import { WaypointManager } from '@/components/WaypointManager';
 
 const Index = () => {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("mapbox-api-key") || "");
+  const [apiKey, setApiKey] = useState(
+    () => process.env.NEXT_PUBLIC_MAPBOX_API_KEY || ''
+  );
   const [data, setData] = useState<OPRData>(() => {
-    const saved = localStorage.getItem("opr-data");
+    const saved = localStorage.getItem('opr-data');
     return saved ? JSON.parse(saved) : DEFAULT_OPR_DATA;
   });
-  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(() => {
-    const saved = localStorage.getItem("opr-selected-route");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState<number | null>(() => {
-    const saved = localStorage.getItem("opr-selected-waypoint");
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number | null>(
+    () => {
+      const saved = localStorage.getItem('opr-selected-route');
+      return saved ? JSON.parse(saved) : null;
+    }
+  );
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState<
+    number | null
+  >(() => {
+    const saved = localStorage.getItem('opr-selected-waypoint');
     return saved ? JSON.parse(saved) : null;
   });
   const [isSettingCity, setIsSettingCity] = useState(false);
-  const [currentMapCenter, setCurrentMapCenter] = useState({ lat: data.latitude, lng: data.longitude });
+  const [currentMapCenter, setCurrentMapCenter] = useState({
+    lat: data.latitude,
+    lng: data.longitude,
+  });
 
   useEffect(() => {
-    localStorage.setItem("mapbox-api-key", apiKey);
-  }, [apiKey]);
-
-  useEffect(() => {
-    localStorage.setItem("opr-data", JSON.stringify(data));
+    localStorage.setItem('opr-data', JSON.stringify(data));
   }, [data]);
 
   useEffect(() => {
-    localStorage.setItem("opr-selected-route", JSON.stringify(selectedRouteIndex));
+    localStorage.setItem(
+      'opr-selected-route',
+      JSON.stringify(selectedRouteIndex)
+    );
   }, [selectedRouteIndex]);
 
   useEffect(() => {
-    localStorage.setItem("opr-selected-waypoint", JSON.stringify(selectedWaypointIndex));
+    localStorage.setItem(
+      'opr-selected-waypoint',
+      JSON.stringify(selectedWaypointIndex)
+    );
   }, [selectedWaypointIndex]);
 
   const handleApiKeyChange = (key: string) => {
@@ -51,14 +67,19 @@ const Index = () => {
     setData(newData);
   };
 
-  const handleRoutesChange = (newRoutes: OPRData["routes"]) => {
+  const handleRoutesChange = (newRoutes: OPRData['routes']) => {
     setData({ ...data, routes: newRoutes });
   };
 
-  const handleWaypointsChange = (newWaypoints: OPRData["routes"][0]["waypoints"]) => {
+  const handleWaypointsChange = (
+    newWaypoints: OPRData['routes'][0]['waypoints']
+  ) => {
     if (selectedRouteIndex === null) return;
     const newRoutes = [...data.routes];
-    newRoutes[selectedRouteIndex] = { ...newRoutes[selectedRouteIndex], waypoints: newWaypoints };
+    newRoutes[selectedRouteIndex] = {
+      ...newRoutes[selectedRouteIndex],
+      waypoints: newWaypoints,
+    };
     handleRoutesChange(newRoutes);
   };
 
@@ -75,7 +96,9 @@ const Index = () => {
   };
 
   const currentWaypoints =
-    selectedRouteIndex !== null ? data.routes[selectedRouteIndex].waypoints : [];
+    selectedRouteIndex !== null
+      ? data.routes[selectedRouteIndex].waypoints
+      : [];
 
   return (
     <div className="flex h-screen bg-background">
@@ -86,9 +109,16 @@ const Index = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">OPR Route Builder</h1>
-              <SettingsDialog apiKey={apiKey} onApiKeyChange={handleApiKeyChange} />
+              <SettingsDialog
+                apiKey={apiKey}
+                onApiKeyChange={handleApiKeyChange}
+              />
             </div>
-            <JsonManager data={data} onImport={handleDataChange} apiKey={apiKey} />
+            <JsonManager
+              data={data}
+              onImport={handleDataChange}
+              apiKey={apiKey}
+            />
           </div>
 
           <Separator />
@@ -98,7 +128,10 @@ const Index = () => {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="city">City</TabsTrigger>
               <TabsTrigger value="routes">Routes</TabsTrigger>
-              <TabsTrigger value="waypoints" disabled={selectedRouteIndex === null}>
+              <TabsTrigger
+                value="waypoints"
+                disabled={selectedRouteIndex === null}
+              >
                 Waypoints
               </TabsTrigger>
             </TabsList>

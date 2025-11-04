@@ -3,6 +3,7 @@
 ## Project info
 
 **URL**: https://lovable.dev/projects/998c86ed-4171-42e2-be65-895fac43a2e4
+![alt text](image.png)
 
 ## How can I edit this code?
 

@@ -12,6 +12,7 @@ import {
 import { Copy, Download, Upload, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { geocodeAddress } from "@/utils/geocoding";
+import { Progress } from "@/components/ui/progress";
 
 interface JsonManagerProps {
   data: OPRData;
@@ -25,16 +26,37 @@ export const JsonManager = ({ data, onImport, apiKey }: JsonManagerProps) => {
   const [exportOpen, setExportOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingProgress, setGeocodingProgress] = useState(0);
+  const [totalToGeocode, setTotalToGeocode] = useState(0);
 
   const jsonString = JSON.stringify(data, null, 2);
 
   const handleImport = async () => {
     try {
       const parsed: OPRData = JSON.parse(importJson);
-      setIsGeocoding(true);
+      
+      // Count waypoints that need geocoding
+      let needsGeocoding = 0;
+      for (const route of parsed.routes) {
+        for (const waypoint of route.waypoints) {
+          if ((waypoint.latitude === 0 || waypoint.longitude === 0) && apiKey) {
+            const searchQuery = `${waypoint.street} ${waypoint.destination}`.trim();
+            if (searchQuery) {
+              needsGeocoding++;
+            }
+          }
+        }
+      }
+
+      if (needsGeocoding > 0) {
+        setIsGeocoding(true);
+        setTotalToGeocode(needsGeocoding);
+        setGeocodingProgress(0);
+      }
 
       // Geocode waypoints with zero coordinates
       let geocodedCount = 0;
+      let processedCount = 0;
       for (const route of parsed.routes) {
         for (const waypoint of route.waypoints) {
           if ((waypoint.latitude === 0 || waypoint.longitude === 0) && apiKey) {
@@ -51,12 +73,17 @@ export const JsonManager = ({ data, onImport, apiKey }: JsonManagerProps) => {
                 waypoint.latitude = results[0].center[1];
                 geocodedCount++;
               }
+              
+              processedCount++;
+              setGeocodingProgress((processedCount / needsGeocoding) * 100);
             }
           }
         }
       }
 
       setIsGeocoding(false);
+      setGeocodingProgress(0);
+      setTotalToGeocode(0);
       onImport(parsed);
       setImportOpen(false);
       setImportJson("");
@@ -68,6 +95,8 @@ export const JsonManager = ({ data, onImport, apiKey }: JsonManagerProps) => {
       }
     } catch (error) {
       setIsGeocoding(false);
+      setGeocodingProgress(0);
+      setTotalToGeocode(0);
       toast.error("Invalid JSON format");
     }
   };
@@ -116,8 +145,17 @@ export const JsonManager = ({ data, onImport, apiKey }: JsonManagerProps) => {
               onChange={(e) => setImportJson(e.target.value)}
               className="min-h-[300px] font-mono text-xs"
             />
+            {isGeocoding && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Geocoding waypoints...</span>
+                  <span>{Math.round(geocodingProgress)}%</span>
+                </div>
+                <Progress value={geocodingProgress} />
+              </div>
+            )}
             <Button onClick={handleImport} className="w-full" disabled={isGeocoding}>
-              {isGeocoding ? "Geocoding waypoints..." : "Import"}
+              {isGeocoding ? "Geocoding..." : "Import"}
             </Button>
           </div>
         </DialogContent>
